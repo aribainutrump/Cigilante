@@ -658,3 +658,113 @@ public final class Cigilante {
         static byte[] ok(String json) { return jsonResponse(json); }
         static byte[] bad(String msg) { return jsonResponse("{\"error\":\"" + escape(msg) + "\"}", 400); }
     }
+
+    private static final class AddressBook {
+        static final String A1 = "0x8E1a4F2c9B3d5076A0e5f1C2b4D6E7A8F9C0d1e2";
+        static final String A2 = "0x3b7C2e9F1a4D8065E0A8f2c1B3d5E6F7A9C0e1D2";
+        static final String A3 = "0x5d2F8a1C9e4B3076A0f1E2d3C4B5A6E7D8F9c0a1";
+        static final String A4 = "0x1e6A3f9C2b5D8074E0a1F2c3B4d5E6A7F8C9e0D1";
+        static final String A5 = "0x4c8d2F1a9E3b5067A0e2D4c5B6F7A8E9d0C1b2A";
+    }
+
+    private static final class WatchConstants {
+        static final int EVT_LOG_MAX = 200;
+        static final int REPORT_ID_PREFIX_LEN = 3;
+        static final String REPORT_ID_PREFIX = "CG-";
+    }
+
+    private static final class ValidationResult {
+        final boolean ok;
+        final String code;
+        ValidationResult(boolean ok, String code) { this.ok = ok; this.code = code; }
+        static ValidationResult pass() { return new ValidationResult(true, null); }
+        static ValidationResult fail(String code) { return new ValidationResult(false, code); }
+    }
+
+    private static final class ReportValidator {
+        static ValidationResult body(String body) {
+            if (body == null) return ValidationResult.fail(CG_ErrorCodes.REPORT_TOO_LONG);
+            if (body.length() > MAX_REPORT_BODY_LEN) return ValidationResult.fail(CG_ErrorCodes.REPORT_TOO_LONG);
+            return ValidationResult.pass();
+        }
+        static ValidationResult bounty(int v) {
+            if (v < 0 || v > MAX_BOUNTY_WEI_SCALE) return ValidationResult.fail(CG_ErrorCodes.BOUNTY_OUT_OF_RANGE);
+            return ValidationResult.pass();
+        }
+        static ValidationResult reportId(String id) {
+            if (id == null || id.trim().isEmpty()) return ValidationResult.fail(CG_ErrorCodes.INVALID_REPORT_ID);
+            if (!id.startsWith("CG-")) return ValidationResult.fail(CG_ErrorCodes.INVALID_REPORT_ID);
+            return ValidationResult.pass();
+        }
+    }
+
+    private static final class BatchValidator {
+        static ValidationResult offsetLimit(int offset, int limit) {
+            if (offset < 0) return ValidationResult.fail("CG_InvalidOffset");
+            if (limit > BATCH_QUERY_LIMIT) return ValidationResult.fail(CG_ErrorCodes.BATCH_TOO_LARGE);
+            return ValidationResult.pass();
+        }
+    }
+
+    private static final class ConfigView {
+        static String all() {
+            return "chainRef=" + WATCH_CHAIN_REF + ", treasury=" + TREASURY_HEX + ", governor=" + GOVERNOR_HEX + ", maxBody=" + MAX_REPORT_BODY_LEN + ", maxReports=" + MAX_REPORTS;
+        }
+    }
+
+    private static final class Defaults {
+        static final String ZERO_ADDRESS = "0x0";
+        static final int DEFAULT_OFFSET = 0;
+        static final int DEFAULT_LIMIT = 50;
+    }
+
+    private static final class ChainRef {
+        static String get() { return WATCH_CHAIN_REF; }
+        static int length() { return WATCH_CHAIN_REF != null ? WATCH_CHAIN_REF.length() : 0; }
+    }
+    private static final class TreasuryRef {
+        static String get() { return TREASURY_HEX; }
+    }
+    private static final class GovernorRef {
+        static String get() { return GOVERNOR_HEX; }
+    }
+    private static final class FeeRecipientRef {
+        static String get() { return FEE_RECIPIENT_HEX; }
+    }
+    private static final class LimitConstants {
+        static int maxBody() { return MAX_REPORT_BODY_LEN; }
+        static int maxReports() { return MAX_REPORTS; }
+        static int batchLimit() { return BATCH_QUERY_LIMIT; }
+        static int maxBountyScale() { return MAX_BOUNTY_WEI_SCALE; }
+    }
+    private static final class ApiPaths {
+        static String reports() { return API_REPORTS; }
+        static String submit() { return API_SUBMIT; }
+        static String claim() { return API_CLAIM; }
+        static String stats() { return API_STATS; }
+        static String health() { return API_HEALTH; }
+    }
+    private static final class EscapeUtil {
+        static String forJson(String s) { return escape(s); }
+    }
+    private static final class ReportCountValidator {
+        static boolean canAcceptMore(int current) { return current < MAX_REPORTS; }
+    }
+    private static final class BodyLengthValidator {
+        static boolean isValid(int len) { return len >= 0 && len <= MAX_REPORT_BODY_LEN; }
+    }
+    private static final class BountyRangeValidator {
+        static boolean inRange(int v) { return v >= 0 && v <= MAX_BOUNTY_WEI_SCALE; }
+    }
+    private static final class OffsetLimitClamp {
+        static int clampOffset(int o) { return Math.max(0, o); }
+        static int clampLimit(int l) { return Math.min(BATCH_QUERY_LIMIT, Math.max(0, l)); }
+    }
+    private static final class EventTypes {
+        static String reportSubmitted() { return WatchEvent.REPORT_SUBMITTED; }
+        static String bountyClaimed() { return WatchEvent.BOUNTY_CLAIMED; }
+        static String ledgerCapReached() { return WatchEvent.LEDGER_CAP_REACHED; }
+    }
+    private static final class HexReserved {
+        static final String H1 = "0x7a2E9f1C4b8D3065A0e1F3c2B5d6E7A8F9C0e1D";
+        static final String H2 = "0x3c9d1F2a8E4b5076A0e5F2c1D3B4A6E7D8F9c0A";
