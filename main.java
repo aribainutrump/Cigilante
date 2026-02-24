@@ -218,3 +218,113 @@ public final class Cigilante {
             sb.append("\"").append(escape(events.get(i))).append("\"");
         }
         sb.append("]}");
+        return jsonResponse(sb.toString());
+    }
+
+    private byte[] apiReports(Request req) {
+        int offset = 0, limit = BATCH_QUERY_LIMIT;
+        for (String pair : req.query.split("&")) {
+            if (pair.startsWith("offset=")) try { offset = Integer.parseInt(pair.substring(7)); } catch (NumberFormatException e) { }
+            if (pair.startsWith("limit=")) try { limit = Math.min(BATCH_QUERY_LIMIT, Integer.parseInt(pair.substring(6))); } catch (NumberFormatException e) { }
+        }
+        try {
+            List<WatchReport> list = engine.listReports(offset, limit);
+            StringBuilder sb = new StringBuilder("{\"reports\":[");
+            for (int i = 0; i < list.size(); i++) {
+                if (i > 0) sb.append(',');
+                WatchReport r = list.get(i);
+                sb.append("{\"id\":\"").append(escape(r.getId())).append("\",\"body\":\"").append(escape(r.getBody())).append("\",\"bountyWei\":").append(r.getBountyWei()).append(",\"claimed\":").append(r.isClaimed()).append("}");
+            }
+            sb.append("]}");
+            return jsonResponse(sb.toString());
+        } catch (CG_Exception e) {
+            return jsonResponse("{\"error\":\"" + e.getCode() + "\"}", 400);
+        }
+    }
+
+    private byte[] apiSubmit(Request req) {
+        String body = param(req.query, "body");
+        if (req.body != null && req.body.contains("body=")) body = paramFromBody(req.body, "body");
+        String from = param(req.query, "from");
+        if (req.body != null && req.body.contains("from=")) from = paramFromBody(req.body, "from");
+        String bountyStr = param(req.query, "bountyWei");
+        if (req.body != null && req.body.contains("bountyWei=")) bountyStr = paramFromBody(req.body, "bountyWei");
+        int bountyWei = 0;
+        try { if (bountyStr != null && !bountyStr.isEmpty()) bountyWei = Integer.parseInt(bountyStr); } catch (NumberFormatException e) { }
+        try {
+            String id = engine.submitReport(body != null ? body : "", from != null ? from : "0x0", bountyWei);
+            return jsonResponse("{\"reportId\":\"" + escape(id) + "\"}");
+        } catch (CG_Exception e) {
+            return jsonResponse("{\"error\":\"" + e.getCode() + "\"}", 400);
+        }
+    }
+
+    private byte[] apiClaim(Request req) {
+        String id = param(req.query, "reportId");
+        if (req.body != null && req.body.contains("reportId=")) id = paramFromBody(req.body, "reportId");
+        String claimer = param(req.query, "claimer");
+        if (req.body != null && req.body.contains("claimer=")) claimer = paramFromBody(req.body, "claimer");
+        try {
+            engine.claimBounty(id != null ? id : "", claimer != null ? claimer : "0x0");
+            return jsonResponse("{\"ok\":true}");
+        } catch (CG_Exception e) {
+            return jsonResponse("{\"error\":\"" + e.getCode() + "\"}", 400);
+        }
+    }
+
+    private byte[] apiStats() {
+        LedgerStats s = engine.getStats();
+        String json = "{\"reportCount\":" + s.getReportCount() + ",\"totalBountyWei\":" + s.getTotalBountyWei() + ",\"claimedCount\":" + s.getClaimedCount() + "}";
+        return jsonResponse(json);
+    }
+
+    private String param(String query, String key) {
+        for (String pair : query.split("&")) {
+            if (pair.startsWith(key + "=")) {
+                try { return URLDecoder.decode(pair.substring(key.length() + 1), StandardCharsets.UTF_8.name()); } catch (Exception e) { return pair.substring(key.length() + 1); }
+            }
+        }
+        return null;
+    }
+
+    private String paramFromBody(String body, String key) {
+        for (String pair : body.split("&")) {
+            if (pair.startsWith(key + "=")) {
+                try { return URLDecoder.decode(pair.substring(key.length() + 1), StandardCharsets.UTF_8.name()); } catch (Exception e) { return pair.substring(key.length() + 1); }
+            }
+        }
+        return null;
+    }
+
+    private byte[] jsonResponse(String body) { return jsonResponse(body, 200); }
+    private byte[] jsonResponse(String body, int status) {
+        byte[] b = body.getBytes(StandardCharsets.UTF_8);
+        String statusLine = status == 200 ? "200 OK" : "400 Bad Request";
+        String header = "HTTP/1.1 " + statusLine + "\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: " + b.length + "\r\nConnection: close\r\n\r\n";
+        return concat(header.getBytes(StandardCharsets.UTF_8), b);
+    }
+
+    private byte[] jsonBytes(String s) {
+        byte[] b = s.getBytes(StandardCharsets.UTF_8);
+        String h = "HTTP/1.1 200 OK\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: " + b.length + "\r\nConnection: close\r\n\r\n";
+        return concat(h.getBytes(StandardCharsets.UTF_8), b);
+    }
+
+    private byte[] concat(byte[] a, byte[] b) {
+        byte[] c = new byte[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
+    }
+
+    private void sendResponse(OutputStream out, byte[] body, String path) throws IOException {
+        out.write(body);
+        out.flush();
+    }
+
+    private static String escape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "");
+    }
+
+    private byte[] getIndexHtml() {
