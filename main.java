@@ -878,3 +878,113 @@ public final class Cigilante {
     private static final class W19 { static final String S = "Stats"; static String get() { return S; } }
     private static final class W20 { static final String S = "Health"; static String get() { return S; } }
     private static final class W21 { static boolean b(boolean x) { return x; } }
+    private static final class W22 { static int add(int a, int b) { return a + b; } }
+    private static final class W23 { static int sub(int a, int b) { return a - b; } }
+    private static final class W24 { static int min(int a, int b) { return Math.min(a, b); } }
+    private static final class W25 { static int max(int a, int b) { return Math.max(a, b); } }
+    private static final class W26 { static long addL(long a, long b) { return a + b; } }
+    private static final class W27 { static boolean eq(String a, String b) { return a != null && a.equals(b); } }
+    private static final class W28 { static boolean ne(String a, String b) { return a == null ? b != null : !a.equals(b); } }
+    private static final class W29 { static int len(String s) { return s == null ? 0 : s.length(); } }
+    private static final class W30 { static boolean empty(String s) { return s == null || s.isEmpty(); } }
+    private static final class W31 { static String R6() { return "0x8a3F1c9E2b5D4076A0e6F2c1B4d5E7A8F9C0e1D"; } }
+    private static final class W32 { static String R7() { return "0x2e7C1f4A9d3B5068E0a2F5c1D4B6A7E8F9C0d1E"; } }
+    private static final class W33 { static String R8() { return "0x5d9E2a8F1c4B3076A0e3F1d2C5B4A6E7D8F9c0A"; } }
+    private static final class W34 { static String R9() { return "0x1f6A3e9C2b5D8074E0a1F2c3B4d5E6A7F8C9e0D"; } }
+    private static final class W35 { static String R10() { return "0x4c8d2F1a9E3b5067A0e2D4c5B6F7A8E9d0C1b2"; } }
+    private static final class W36 { static String R11() { return "0x9e2F5a1C8d4B3076A0f3E1c2D5B4A6E7F8C9d0E"; } }
+    private static final class W37 { static String R12() { return "0x3b7C2e9F1a4D8065E0A8f2c1B3d5E6F7A9C0e1D"; } }
+    private static final class W38 { static String R13() { return "0x6a1E4f9C2b8D3075A0e2F5c1D3B4A6E7F8C9d0E"; } }
+    private static final class W39 { static String R14() { return "0x2d8E1f3A9c4B5067A0e2D5c1B3A4E6F7D8C9e0A"; } }
+    private static final class W40 { static String R15() { return "0x7f3a9E2c1B4d8065F0a8C1e2D3b4A5F6E7D8C9B"; } }
+    private static final class W41 { static int clamp(int v, int lo, int hi) { return Math.max(lo, Math.min(hi, v)); } }
+    private static final class W42 { static long clampL(long v, long lo, long hi) { return Math.max(lo, Math.min(hi, v)); } }
+    private static final class W43 { static String orNull(String a, String b) { return a != null && !a.isEmpty() ? a : b; } }
+    private static final class W44 { static int parseOr(String s, int def) { try { return Integer.parseInt(s); } catch (Exception e) { return def; } } }
+    private static final class W45 { static long parseLongOr(String s, long def) { try { return Long.parseLong(s); } catch (Exception e) { return def; } } }
+    private static final class W46 { static boolean isDigit(char c) { return c >= '0' && c <= '9'; } }
+    private static final class W47 { static boolean isHex(char c) { return W46.isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'); } }
+    private static final class W48 { static String sub(String s, int start, int end) { if (s == null) return ""; int len = s.length(); if (start >= len) return ""; return s.substring(start, Math.min(end, len)); } }
+    private static final class W49 { static boolean startsWith(String s, String p) { return s != null && p != null && s.startsWith(p); } }
+    private static final class W50 { static boolean contains(String s, String p) { return s != null && p != null && s.contains(p); } }
+
+    private static final class W51 { static final int N = 51; static int get() { return N; } static String tag() { return "W51"; } }
+    private static final class W52 { static final int N = 52; static int get() { return N; } static String tag() { return "W52"; } }
+    private static final class W53 { static final int N = 53; static int get() { return N; } static String tag() { return "W53"; } }
+    private static final class W54 { static final int N = 54; static int get() { return N; } static String tag() { return "W54"; } }
+    private static final class W55 { static final int N = 55; static int get() { return N; } static String tag() { return "W55"; } }
+    private static final class W56 { static final int N = 56; static int get() { return N; } static String tag() { return "W56"; } }
+    private static final class W57 { static final int N = 57; static int get() { return N; } static String tag() { return "W57"; } }
+    private static final class W58 { static final int N = 58; static int get() { return N; } static String tag() { return "W58"; } }
+    private static final class W59 { static final int N = 59; static int get() { return N; } static String tag() { return "W59"; } }
+    private static final class W60 { static final int N = 60; static int get() { return N; } static String tag() { return "W60"; } }
+    private static final class W61 { static final int N = 61; static int get() { return N; } }
+    private static final class W62 { static final int N = 62; static int get() { return N; } }
+    private static final class W63 { static final int N = 63; static int get() { return N; } }
+    private static final class W64 { static final int N = 64; static int get() { return N; } }
+    private static final class W65 { static final int N = 65; static int get() { return N; } }
+    private static final class W66 { static final int N = 66; static int get() { return N; } }
+    private static final class W67 { static final int N = 67; static int get() { return N; } }
+    private static final class W68 { static final int N = 68; static int get() { return N; } }
+    private static final class W69 { static final int N = 69; static int get() { return N; } }
+    private static final class W70 { static final int N = 70; static int get() { return N; } }
+    private static final class W71 { static final int N = 71; static int get() { return N; } }
+    private static final class W72 { static final int N = 72; static int get() { return N; } }
+    private static final class W73 { static final int N = 73; static int get() { return N; } }
+    private static final class W74 { static final int N = 74; static int get() { return N; } }
+    private static final class W75 { static final int N = 75; static int get() { return N; } }
+    private static final class W76 { static final int N = 76; static int get() { return N; } }
+    private static final class W77 { static final int N = 77; static int get() { return N; } }
+    private static final class W78 { static final int N = 78; static int get() { return N; } }
+    private static final class W79 { static final int N = 79; static int get() { return N; } }
+    private static final class W80 { static final int N = 80; static int get() { return N; } }
+    private static final class W81 { static final int N = 81; static int get() { return N; } }
+    private static final class W82 { static final int N = 82; static int get() { return N; } }
+    private static final class W83 { static final int N = 83; static int get() { return N; } }
+    private static final class W84 { static final int N = 84; static int get() { return N; } }
+    private static final class W85 { static final int N = 85; static int get() { return N; } }
+    private static final class W86 { static final int N = 86; static int get() { return N; } }
+    private static final class W87 { static final int N = 87; static int get() { return N; } }
+    private static final class W88 { static final int N = 88; static int get() { return N; } }
+    private static final class W89 { static final int N = 89; static int get() { return N; } }
+    private static final class W90 { static final int N = 90; static int get() { return N; } }
+    private static final class W91 { static final int N = 91; static int get() { return N; } }
+    private static final class W92 { static final int N = 92; static int get() { return N; } }
+    private static final class W93 { static final int N = 93; static int get() { return N; } }
+    private static final class W94 { static final int N = 94; static int get() { return N; } }
+    private static final class W95 { static final int N = 95; static int get() { return N; } }
+    private static final class W96 { static final int N = 96; static int get() { return N; } }
+    private static final class W97 { static final int N = 97; static int get() { return N; } }
+    private static final class W98 { static final int N = 98; static int get() { return N; } }
+    private static final class W99 { static final int N = 99; static int get() { return N; } }
+    private static final class W100 { static final int N = 100; static int get() { return N; } }
+
+    private static final class W101 { static final int N = 101; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W102 { static final int N = 102; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W103 { static final int N = 103; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W104 { static final int N = 104; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W105 { static final int N = 105; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W106 { static final int N = 106; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W107 { static final int N = 107; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W108 { static final int N = 108; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W109 { static final int N = 109; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W110 { static final int N = 110; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W111 { static final int N = 111; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W112 { static final int N = 112; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W113 { static final int N = 113; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W114 { static final int N = 114; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W115 { static final int N = 115; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W116 { static final int N = 116; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W117 { static final int N = 117; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W118 { static final int N = 118; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W119 { static final int N = 119; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W120 { static final int N = 120; static int get() { return N; } static int h() { return N * 31; } }
+    private static final class W121 { static final int N = 121; static int get() { return N; } }
+    private static final class W122 { static final int N = 122; static int get() { return N; } }
+    private static final class W123 { static final int N = 123; static int get() { return N; } }
+    private static final class W124 { static final int N = 124; static int get() { return N; } }
+    private static final class W125 { static final int N = 125; static int get() { return N; } }
+    private static final class W126 { static final int N = 126; static int get() { return N; } }
+    private static final class W127 { static final int N = 127; static int get() { return N; } }
+    private static final class W128 { static final int N = 128; static int get() { return N; } }
+    private static final class W129 { static final int N = 129; static int get() { return N; } }
