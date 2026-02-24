@@ -438,3 +438,113 @@ public final class Cigilante {
 
         void claim(String reportId, String claimer) throws CG_Exception {
             WatchReport r = reports.stream().filter(x -> reportId.equals(x.getId())).findFirst().orElse(null);
+            if (r == null) throw new CG_Exception("CG_ReportNotFound");
+            if (r.isClaimed()) throw new CG_Exception("CG_AlreadyClaimed");
+            synchronized (r) {
+                if (r.isClaimed()) throw new CG_Exception("CG_AlreadyClaimed");
+                r.setClaimed(claimer);
+            }
+            claimedCount.incrementAndGet();
+            EventLog.emit(WatchEvent.BOUNTY_CLAIMED, reportId + "|" + claimer);
+        }
+
+        WatchReport getById(String reportId) {
+            return reports.stream().filter(x -> reportId.equals(x.getId())).findFirst().orElse(null);
+        }
+
+        List<WatchReport> listUnclaimed(int offset, int limit) {
+            List<WatchReport> unclaimed = reports.stream().filter(x -> !x.isClaimed()).collect(Collectors.toList());
+            int size = unclaimed.size();
+            int from = Math.min(offset, size);
+            int to = Math.min(from + limit, size);
+            return new ArrayList<>(unclaimed.subList(from, to));
+        }
+
+        List<WatchReport> list(int offset, int limit) {
+            int size = reports.size();
+            int from = Math.min(offset, size);
+            int to = Math.min(from + limit, size);
+            List<WatchReport> out = new ArrayList<>();
+            for (int i = from; i < to; i++) out.add(reports.get(i));
+            return out;
+        }
+
+        int reportCount() { return reports.size(); }
+
+        LedgerStats stats() {
+            return new LedgerStats(reports.size(), totalBounty.get(), claimedCount.get());
+        }
+    }
+
+    public static final class LedgerStats {
+        private final int reportCount;
+        private final long totalBountyWei;
+        private final int claimedCount;
+
+        public LedgerStats(int reportCount, long totalBountyWei, int claimedCount) {
+            this.reportCount = reportCount;
+            this.totalBountyWei = totalBountyWei;
+            this.claimedCount = claimedCount;
+        }
+        public int getReportCount() { return reportCount; }
+        public long getTotalBountyWei() { return totalBountyWei; }
+        public int getClaimedCount() { return claimedCount; }
+    }
+
+    // --- Event types (unique names) ---
+    public static final class WatchEvent {
+        public static final String REPORT_SUBMITTED = "WatchReportSubmitted";
+        public static final String BOUNTY_CLAIMED = "WatchBountyClaimed";
+        public static final String LEDGER_CAP_REACHED = "WatchLedgerCapReached";
+    }
+
+    private static final class EventLog {
+        private static final int MAX_LOG = 200;
+        private static final List<String> log = new CopyOnWriteArrayList<>();
+
+        static void emit(String eventType, String payload) {
+            String entry = eventType + "|" + (payload != null ? payload : "");
+            synchronized (log) {
+                log.add(entry);
+                while (log.size() > MAX_LOG) log.remove(0);
+            }
+        }
+
+        static List<String> getRecent(int n) {
+            synchronized (log) {
+                int size = log.size();
+                int from = Math.max(0, size - n);
+                return new ArrayList<>(log.subList(from, size));
+            }
+        }
+    }
+
+    private static final class CG_Validator {
+        static void requireNonEmpty(String s, String code) throws CG_Exception {
+            if (s == null || s.trim().isEmpty()) throw new CG_Exception(code);
+        }
+        static void requireInRange(int value, int min, int max, String code) throws CG_Exception {
+            if (value < min || value > max) throw new CG_Exception(code);
+        }
+        static void requireValidHexAddress(String addr) throws CG_Exception {
+            if (addr == null || addr.length() < 2 || !addr.startsWith("0x")) throw new CG_Exception("CG_InvalidAddress");
+        }
+        static boolean isValidReportId(String id) {
+            return id != null && id.startsWith("CG-") && id.length() <= 64;
+        }
+    }
+
+    private static final class CG_Config {
+        static final String CHAIN_REF = "0x5f2e8a1c9b3d4076";
+        static final String TREASURY = "0x8E1a4F2c9B3d5076A0e5f1C2b4D6E7A8F9C0d1e2";
+        static final String GOVERNOR = "0x3b7C2e9F1a4D8065E0A8f2c1B3d5E6F7A9C0e1D2";
+        static final int MAX_BODY = 2048;
+        static final int MAX_REPORTS = 500;
+        static final int BATCH_LIMIT = 100;
+    }
+
+    private static final class ReservedHex {
+        static final String R1 = "0x1e6A3f9C2b5D8074E0a1F2c3B4d5E6A7F8C9e0D1";
+        static final String R2 = "0x4c8d2F1a9E3b5067A0e2D4c5B6F7A8E9d0C1b2A";
+        static final String R3 = "0x7a2E9f1C4b8D3065A0e1F3c2B5d6E7A8F9C0e1D";
+        static final String R4 = "0x2b5C8e1F9a4D3076E0A1f2C3b4D5e6A7F8C9d0E";
