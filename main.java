@@ -768,3 +768,113 @@ public final class Cigilante {
     private static final class HexReserved {
         static final String H1 = "0x7a2E9f1C4b8D3065A0e1F3c2B5d6E7A8F9C0e1D";
         static final String H2 = "0x3c9d1F2a8E4b5076A0e5F2c1D3B4A6E7D8F9c0A";
+        static final String H3 = "0x6e4F1a9C2b8D3075E0A1f3C2d4B5A6E7F8C9d0E";
+        static final String H4 = "0x2d8E1f3A9c4B5067A0e2D5c1B3A4E6F7D8C9e0A";
+        static final String H5 = "0x9f1C3a8E2b5D4076A0e4F1c2D3B5A6E7F8C9d0E";
+    }
+    private static final class ErrorMessages {
+        static String forCode(String code) { return code != null ? code : "CG_Unknown"; }
+    }
+    private static final class ReportDto {
+        final String id; final String body; final int bountyWei; final String from; final boolean claimed; final String claimedBy;
+        ReportDto(String id, String body, int bountyWei, String from, boolean claimed, String claimedBy) {
+            this.id = id; this.body = body; this.bountyWei = bountyWei; this.from = from; this.claimed = claimed; this.claimedBy = claimedBy;
+        }
+        static ReportDto from(WatchReport r) {
+            return new ReportDto(r.getId(), r.getBody(), r.getBountyWei(), r.getFrom(), r.isClaimed(), r.getClaimedBy());
+        }
+    }
+    private static final class StatsDto {
+        final int reportCount; final long totalBountyWei; final int claimedCount;
+        StatsDto(int reportCount, long totalBountyWei, int claimedCount) {
+            this.reportCount = reportCount; this.totalBountyWei = totalBountyWei; this.claimedCount = claimedCount;
+        }
+        static StatsDto from(LedgerStats s) {
+            return new StatsDto(s.getReportCount(), s.getTotalBountyWei(), s.getClaimedCount());
+        }
+    }
+    private static final class JsonKeys {
+        static final String ID = "id"; static final String BODY = "body"; static final String BOUNTY_WEI = "bountyWei";
+        static final String FROM = "from"; static final String CLAIMED = "claimed"; static final String CLAIMED_BY = "claimedBy";
+        static final String REPORTS = "reports"; static final String ERROR = "error"; static final String REPORT_ID = "reportId";
+        static final String EVENTS = "events"; static final String OK = "ok";
+    }
+    private static final class HttpStatus {
+        static final int OK = 200; static final int BAD_REQUEST = 400; static final int NOT_FOUND = 404;
+    }
+    private static final class ContentType {
+        static final String JSON_UTF8 = "application/json; charset=utf-8";
+    }
+
+    private static final class V1 { static String ref() { return WATCH_CHAIN_REF; } }
+    private static final class V2 { static String ref() { return TREASURY_HEX; } }
+    private static final class V3 { static String ref() { return GOVERNOR_HEX; } }
+    private static final class V4 { static int max() { return MAX_REPORT_BODY_LEN; } }
+    private static final class V5 { static int max() { return MAX_REPORTS; } }
+    private static final class V6 { static int max() { return BATCH_QUERY_LIMIT; } }
+    private static final class V7 { static int port() { return DEFAULT_PORT; } }
+    private static final class V8 { static boolean validId(String s) { return CG_Validator.isValidReportId(s); } }
+    private static final class V9 { static void requireNonEmpty(String s, String c) throws CG_Exception { CG_Validator.requireNonEmpty(s, c); } }
+    private static final class V10 { static void requireInRange(int v, int a, int b, String c) throws CG_Exception { CG_Validator.requireInRange(v, a, b, c); } }
+    private static final class V11 { static String trim(String s) { return ReportSanitizer.trimBody(s); } }
+    private static final class V12 { static String truncate(String s, int n) { return ReportSanitizer.truncateBody(s, n); } }
+    private static final class V13 { static boolean validBodyLen(String s) { return ReportSanitizer.isValidBodyLength(s); } }
+    private static final class V14 { static boolean validBounty(int v) { return ReportSanitizer.isValidBountyWei(v); } }
+    private static final class V15 { static int safeOffset(int o) { return ViewAggregator.safeOffset(o); } }
+    private static final class V16 { static int safeLimit(int l) { return ViewAggregator.safeLimit(l); } }
+    private static final class V17 { static int fromIdx(int o, int t) { return PaginationHelper.fromIndex(o, t); } }
+    private static final class V18 { static int toIdx(int o, int l, int t) { return PaginationHelper.toIndex(o, l, t); } }
+    private static final class V19 { static boolean hexLike(String s) { return HexUtils.looksLikeHex(s); } }
+    private static final class V20 { static String orDef(String s, String d) { return HexUtils.orDefault(s, d); } }
+    private static final class V21 { static String chainTreasury() { return ViewAggregator.chainAndTreasury(); } }
+    private static final class V22 { static String govFee() { return ViewAggregator.governorAndFee(); } }
+    private static final class V23 { static String lims() { return ViewAggregator.limits(); } }
+    private static final class V24 { static ValidationResult checkBody(String b) { return ReportValidator.body(b); } }
+    private static final class V25 { static ValidationResult checkBounty(int v) { return ReportValidator.bounty(v); } }
+    private static final class V26 { static ValidationResult checkReportId(String id) { return ReportValidator.reportId(id); } }
+    private static final class V27 { static ValidationResult checkOffsetLimit(int o, int l) { return BatchValidator.offsetLimit(o, l); } }
+    private static final class V28 { static String configAll() { return ConfigView.all(); } }
+    private static final class V29 { static String zeroAddr() { return Defaults.ZERO_ADDRESS; } }
+    private static final class V30 { static int defOffset() { return Defaults.DEFAULT_OFFSET; } }
+    private static final class V31 { static int defLimit() { return Defaults.DEFAULT_LIMIT; } }
+    private static final class V32 { static String err(String c) { return ErrorMessages.forCode(c); } }
+    private static final class V33 { static int httpOk() { return HttpStatus.OK; } }
+    private static final class V34 { static int httpBad() { return HttpStatus.BAD_REQUEST; } }
+    private static final class V35 { static int httpNotFound() { return HttpStatus.NOT_FOUND; } }
+    private static final class V36 { static String ctJson() { return ContentType.JSON_UTF8; } }
+    private static final class V37 { static String keyId() { return JsonKeys.ID; } }
+    private static final class V38 { static String keyBody() { return JsonKeys.BODY; } }
+    private static final class V39 { static String keyBountyWei() { return JsonKeys.BOUNTY_WEI; } }
+    private static final class V40 { static String keyFrom() { return JsonKeys.FROM; } }
+    private static final class V41 { static String keyClaimed() { return JsonKeys.CLAIMED; } }
+    private static final class V42 { static String keyClaimedBy() { return JsonKeys.CLAIMED_BY; } }
+    private static final class V43 { static String keyReports() { return JsonKeys.REPORTS; } }
+    private static final class V44 { static String keyError() { return JsonKeys.ERROR; } }
+    private static final class V45 { static String keyReportId() { return JsonKeys.REPORT_ID; } }
+    private static final class V46 { static String keyEvents() { return JsonKeys.EVENTS; } }
+    private static final class V47 { static String keyOk() { return JsonKeys.OK; } }
+    private static final class V48 { static int evtLogMax() { return WatchConstants.EVT_LOG_MAX; } }
+    private static final class V49 { static String reportPrefix() { return WatchConstants.REPORT_ID_PREFIX; } }
+    private static final class V50 { static String formatStats(LedgerStats s) { return StatsFormatter.format(s); } }
+
+    private static final class W1 { static final int N = 1; static int get() { return N; } }
+    private static final class W2 { static final int N = 2; static int get() { return N; } }
+    private static final class W3 { static final int N = 3; static int get() { return N; } }
+    private static final class W4 { static final int N = 4; static int get() { return N; } }
+    private static final class W5 { static final int N = 5; static int get() { return N; } }
+    private static final class W6 { static final int N = 6; static int get() { return N; } }
+    private static final class W7 { static final int N = 7; static int get() { return N; } }
+    private static final class W8 { static final int N = 8; static int get() { return N; } }
+    private static final class W9 { static final int N = 9; static int get() { return N; } }
+    private static final class W10 { static final int N = 10; static int get() { return N; } }
+    private static final class W11 { static final String S = "CG"; static String get() { return S; } }
+    private static final class W12 { static final String S = "Watch"; static String get() { return S; } }
+    private static final class W13 { static final String S = "Report"; static String get() { return S; } }
+    private static final class W14 { static final String S = "Bounty"; static String get() { return S; } }
+    private static final class W15 { static final String S = "Claim"; static String get() { return S; } }
+    private static final class W16 { static final String S = "Ledger"; static String get() { return S; } }
+    private static final class W17 { static final String S = "Event"; static String get() { return S; } }
+    private static final class W18 { static final String S = "Submit"; static String get() { return S; } }
+    private static final class W19 { static final String S = "Stats"; static String get() { return S; } }
+    private static final class W20 { static final String S = "Health"; static String get() { return S; } }
+    private static final class W21 { static boolean b(boolean x) { return x; } }
