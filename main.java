@@ -108,3 +108,113 @@ public final class Cigilante {
     private void startServer() {
         try {
             serverSocket = new ServerSocket(port);
+            executor = Executors.newCachedThreadPool();
+            System.out.println("Cigilante HTTP " + port + " — " + WATCH_CHAIN_REF);
+            while (true) {
+                Socket client = serverSocket.accept();
+                executor.submit(() -> handleConnection(client));
+            }
+        } catch (IOException e) {
+            System.err.println("Server: " + e.getMessage());
+        }
+    }
+
+    private void handleConnection(Socket client) {
+        try {
+            InputStream in = client.getInputStream();
+            OutputStream out = client.getOutputStream();
+            Request req = parseRequest(in);
+            byte[] body = dispatch(req);
+            sendResponse(out, body, req.path);
+        } catch (Exception ignored) {
+        } finally {
+            try { client.close(); } catch (IOException ignored) { }
+        }
+    }
+
+    private Request parseRequest(InputStream in) throws IOException {
+        BufferedReader r = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
+        String line = r.readLine();
+        if (line == null) return new Request("GET", "/", "", null);
+        String[] parts = line.split("\\s+", 3);
+        String method = parts.length > 0 ? parts[0] : "GET";
+        String path = parts.length > 1 ? parts[1].split("\\?")[0] : "/";
+        String query = "";
+        if (line.contains("?")) {
+            int q = line.indexOf('?');
+            int sp = line.indexOf(' ', q);
+            query = sp > 0 ? line.substring(q + 1, sp) : line.substring(q + 1);
+        }
+        while (true) {
+            line = r.readLine();
+            if (line == null || line.isEmpty()) break;
+        }
+        String body = null;
+        if ("POST".equalsIgnoreCase(method)) {
+            StringBuilder sb = new StringBuilder();
+            char[] buf = new char[8192];
+            int n;
+            while (r.ready() && (n = r.read(buf)) != -1) sb.append(buf, 0, n);
+            body = sb.toString().trim();
+        }
+        return new Request(method, path, query, body);
+    }
+
+    private byte[] dispatch(Request req) {
+        if ("/".equals(req.path) || req.path.startsWith("/index")) return getIndexHtml();
+        if (req.path.startsWith(API_REPORTS)) return apiReports(req);
+        if (req.path.startsWith(API_SUBMIT)) return apiSubmit(req);
+        if (req.path.startsWith(API_CLAIM)) return apiClaim(req);
+        if (req.path.startsWith(API_STATS)) return apiStats();
+        if (req.path.equals(API_HEALTH)) return jsonBytes("{\"status\":\"ok\",\"ref\":\"" + WATCH_CHAIN_REF + "\"}");
+        if (req.path.startsWith("/report")) return apiReportById(req);
+        if (req.path.startsWith("/reports/unclaimed")) return apiReportsUnclaimed(req);
+        if (req.path.startsWith("/events")) return apiEvents(req);
+        return "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
+    }
+
+    private byte[] apiReportById(Request req) {
+        String id = param(req.query, "id");
+        if (id == null || id.isEmpty()) return jsonResponse("{\"error\":\"CG_MissingId\"}", 400);
+        try {
+            WatchReport r = engine.getReportById(id);
+            String json = "{\"id\":\"" + escape(r.getId()) + "\",\"body\":\"" + escape(r.getBody()) + "\",\"bountyWei\":" + r.getBountyWei() + ",\"from\":\"" + escape(r.getFrom()) + "\",\"claimed\":" + r.isClaimed() + (r.getClaimedBy() != null ? ",\"claimedBy\":\"" + escape(r.getClaimedBy()) + "\"" : "") + "}";
+            return jsonResponse(json);
+        } catch (CG_Exception e) {
+            return jsonResponse("{\"error\":\"" + e.getCode() + "\"}", 400);
+        }
+    }
+
+    private byte[] apiReportsUnclaimed(Request req) {
+        int offset = 0, limit = BATCH_QUERY_LIMIT;
+        for (String pair : req.query.split("&")) {
+            if (pair.startsWith("offset=")) try { offset = Integer.parseInt(pair.substring(7)); } catch (NumberFormatException e) { }
+            if (pair.startsWith("limit=")) try { limit = Math.min(BATCH_QUERY_LIMIT, Integer.parseInt(pair.substring(6))); } catch (NumberFormatException e) { }
+        }
+        try {
+            List<WatchReport> list = engine.listUnclaimed(offset, limit);
+            StringBuilder sb = new StringBuilder("{\"reports\":[");
+            for (int i = 0; i < list.size(); i++) {
+                if (i > 0) sb.append(',');
+                WatchReport r = list.get(i);
+                sb.append("{\"id\":\"").append(escape(r.getId())).append("\",\"body\":\"").append(escape(r.getBody())).append("\",\"bountyWei\":").append(r.getBountyWei()).append("}");
+            }
+            sb.append("]}");
+            return jsonResponse(sb.toString());
+        } catch (CG_Exception e) {
+            return jsonResponse("{\"error\":\"" + e.getCode() + "\"}", 400);
+        }
+    }
+
+    private byte[] apiEvents(Request req) {
+        int n = 50;
+        for (String pair : req.query.split("&")) {
+            if (pair.startsWith("n=")) try { n = Math.min(200, Integer.parseInt(pair.substring(2))); } catch (NumberFormatException e) { }
+        }
+        List<String> events = EventLog.getRecent(n);
+        StringBuilder sb = new StringBuilder("{\"events\":[");
+        for (int i = 0; i < events.size(); i++) {
+            if (i > 0) sb.append(',');
+            sb.append("\"").append(escape(events.get(i))).append("\"");
+        }
+        sb.append("]}");
