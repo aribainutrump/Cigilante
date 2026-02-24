@@ -328,3 +328,113 @@ public final class Cigilante {
     }
 
     private byte[] getIndexHtml() {
+        return getVigilanteWatchHtml().getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static String getVigilanteWatchHtml() {
+        return "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>VigilanteWatch — Cigilante</title><style>" + getVigilanteWatchCss() + "</style></head><body><div class=\"app\"><header><h1>VigilanteWatch</h1><p class=\"tag\">Cigilante bounty board</p></header><main><section class=\"card\"><h2>Submit report</h2><textarea id=\"reportBody\" placeholder=\"Report body...\" maxlength=\"2048\"></textarea><input id=\"bountyWei\" type=\"number\" min=\"0\" placeholder=\"Bounty (wei)\"><button id=\"submitBtn\">Submit</button></section><section class=\"card\"><h2>Reports</h2><div id=\"reportList\"></div><button id=\"refreshBtn\">Refresh</button></section><section class=\"card\"><h2>Stats</h2><pre id=\"stats\"></pre></section></main><footer>Cigilante — Watch net. Not legal advice.</footer></div><script>" + getVigilanteWatchJs() + "</script></body></html>";
+    }
+
+    private static String getVigilanteWatchCss() {
+        return "*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#0d0c10;color:#e0dce8;min-height:100vh}.app{max-width:640px;margin:0 auto;padding:1.5rem}.app header{text-align:center;margin-bottom:1.5rem}.app h1{font-size:1.75rem;color:#a78bfa}.app .tag{color:#888;font-size:0.9rem}.card{background:rgba(30,28,40,0.95);border:1px solid #3d3a4a;border-radius:12px;padding:1.25rem;margin-bottom:1rem}.card h2{font-size:1rem;color:#a78bfa;margin:0 0 0.75rem 0}#reportBody{width:100%;min-height:80px;padding:0.75rem;border:1px solid #3d3a4a;border-radius:8px;background:#1a1820;color:#e0dce8;font-size:0.95rem}#bountyWei{width:120px;padding:0.5rem;margin:0.5rem 0.5rem 0 0;border:1px solid #3d3a4a;border-radius:6px;background:#1a1820;color:#e0dce8}.card button{padding:0.5rem 1rem;background:#7c3aed;border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;margin-top:0.5rem}.card button:hover{background:#6d28d9}#reportList{margin:0.5rem 0;font-size:0.9rem}#reportList .item{margin-bottom:0.5rem;padding:0.5rem;background:rgba(0,0,0,0.2);border-radius:6px}#stats{font-size:0.85rem;color:#aaa}footer{text-align:center;margin-top:1.5rem;color:#666;font-size:0.8rem}";
+    }
+
+    private static String getVigilanteWatchJs() {
+        return "var API='/reports';var SUBMIT='/submit';var CLAIM='/claim';var STATS='/stats';function qs(s){return document.querySelector(s)}function qsa(s){return document.querySelectorAll(s)}function refreshReports(){fetch(API+'?limit=50').then(function(r){return r.json()}).then(function(d){var el=qs('#reportList');el.innerHTML='';(d.reports||[]).forEach(function(r){var div=document.createElement('div');div.className='item';div.innerHTML='<strong>'+r.id+'</strong> | '+r.body.substring(0,80)+'... | bounty: '+r.bountyWei+(r.claimed?' (claimed)':'')+' <button data-id=\"'+r.id+'\">Claim</button>';el.appendChild(div)});qsa('#reportList button').forEach(function(btn){btn.onclick=function(){fetch(CLAIM+'?reportId='+encodeURIComponent(btn.getAttribute('data-id'))+'&claimer=0x0',{method:'POST'}).then(function(r){return r.json()}).then(function(d){if(d.ok)refreshReports();if(d.error)alert(d.error)})}})})}function refreshStats(){fetch(STATS).then(function(r){return r.json()}).then(function(d){qs('#stats').textContent='Reports: '+d.reportCount+' | Total bounty: '+d.totalBountyWei+' | Claimed: '+d.claimedCount})}qs('#submitBtn').onclick=function(){var body=qs('#reportBody').value.trim();var bounty=qs('#bountyWei').value||'0';fetch(SUBMIT,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'body='+encodeURIComponent(body)+'&bountyWei='+encodeURIComponent(bounty)+'&from=0x0'}).then(function(r){return r.json()}).then(function(d){if(d.reportId){qs('#reportBody').value='';qs('#bountyWei').value='';refreshReports();refreshStats()}if(d.error)alert(d.error)})};qs('#refreshBtn').onclick=function(){refreshReports();refreshStats()};refreshReports();refreshStats();";
+    }
+
+    private static final class Request {
+        final String method, path, query, body;
+        Request(String method, String path, String query, String body) { this.method = method; this.path = path; this.query = query; this.body = body; }
+    }
+
+    // --- Exceptions (unique codes) ---
+    public static final class CG_Exception extends RuntimeException {
+        private final String code;
+        public CG_Exception(String code) { super(code); this.code = code; }
+        public String getCode() { return code; }
+    }
+
+    private static final class CigilanteEngine {
+        private final WatchLedger ledger;
+
+        CigilanteEngine(WatchLedger ledger) { this.ledger = ledger; }
+
+        String submitReport(String body, String from, int bountyWei) throws CG_Exception {
+            if (body == null) body = "";
+            body = body.trim();
+            if (body.length() > MAX_REPORT_BODY_LEN) throw new CG_Exception("CG_ReportTooLong");
+            if (ledger.reportCount() >= MAX_REPORTS) throw new CG_Exception("CG_ReportCapReached");
+            if (bountyWei < 0 || bountyWei > MAX_BOUNTY_WEI_SCALE) throw new CG_Exception("CG_BountyOutOfRange");
+            return ledger.appendReport(body, from, bountyWei);
+        }
+
+        void claimBounty(String reportId, String claimer) throws CG_Exception {
+            if (reportId == null || reportId.trim().isEmpty()) throw new CG_Exception("CG_InvalidReportId");
+            ledger.claim(reportId.trim(), claimer != null ? claimer : "0x0");
+        }
+
+        List<WatchReport> listReports(int offset, int limit) throws CG_Exception {
+            if (limit > BATCH_QUERY_LIMIT) throw new CG_Exception("CG_BatchTooLarge");
+            return ledger.list(offset, limit);
+        }
+
+        LedgerStats getStats() {
+            return ledger.stats();
+        }
+
+        WatchReport getReportById(String reportId) throws CG_Exception {
+            WatchReport r = ledger.getById(reportId);
+            if (r == null) throw new CG_Exception("CG_ReportNotFound");
+            return r;
+        }
+
+        List<WatchReport> listUnclaimed(int offset, int limit) throws CG_Exception {
+            if (limit > BATCH_QUERY_LIMIT) throw new CG_Exception("CG_BatchTooLarge");
+            return ledger.listUnclaimed(offset, limit);
+        }
+    }
+
+    private static final class WatchReport {
+        private final String id;
+        private final String body;
+        private final int bountyWei;
+        private final String from;
+        private volatile boolean claimed;
+        private volatile String claimedBy;
+
+        WatchReport(String id, String body, int bountyWei, String from) {
+            this.id = id;
+            this.body = body;
+            this.bountyWei = bountyWei;
+            this.from = from;
+            this.claimed = false;
+            this.claimedBy = null;
+        }
+
+        String getId() { return id; }
+        String getBody() { return body; }
+        int getBountyWei() { return bountyWei; }
+        String getFrom() { return from; }
+        boolean isClaimed() { return claimed; }
+        String getClaimedBy() { return claimedBy; }
+        void setClaimed(String by) { this.claimed = true; this.claimedBy = by; }
+    }
+
+    private static final class WatchLedger {
+        private final List<WatchReport> reports = new CopyOnWriteArrayList<>();
+        private final AtomicInteger seq = new AtomicInteger(0);
+        private final AtomicLong totalBounty = new AtomicLong(0);
+        private final AtomicInteger claimedCount = new AtomicInteger(0);
+
+        String appendReport(String body, String from, int bountyWei) {
+            String id = "CG-" + System.currentTimeMillis() + "-" + seq.incrementAndGet();
+            WatchReport r = new WatchReport(id, body, bountyWei, from);
+            reports.add(r);
+            totalBounty.addAndGet(bountyWei);
+            EventLog.emit(WatchEvent.REPORT_SUBMITTED, id + "|" + from);
+            return id;
+        }
+
+        void claim(String reportId, String claimer) throws CG_Exception {
+            WatchReport r = reports.stream().filter(x -> reportId.equals(x.getId())).findFirst().orElse(null);
